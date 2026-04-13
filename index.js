@@ -169,4 +169,4 @@ if (message.content.startsWith("!omluvenka")) {
 
 });
 
-client.login(TOKEN);
+client.login(process.env.TOKEN);
