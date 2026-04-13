@@ -9,9 +9,6 @@ const client = new Client({
   ]
 });
 
-// 🔐 TOKEN (PC verzia)
-client.login(process.env.TOKEN);
-
 // 💰 BANKA
 let banka = { balance: 500000 };
 if (fs.existsSync('banka.json')) {
@@ -23,14 +20,6 @@ let names = {};
 if (fs.existsSync('names.json')) {
   names = JSON.parse(fs.readFileSync('names.json'));
 }
-
-// 📊 STATS
-let stats = {
-  deposits: 0,
-  withdrawals: 0,
-  transactions: 0,
-  day: new Date().getDate()
-};
 
 // 💾 SAVE
 function saveBank() {
@@ -46,7 +35,7 @@ function getICName(user) {
   return names[user.id] || user.username;
 }
 
-// 💵 FORMAT $
+// 💵 FORMAT
 function money(num) {
   return `$${num.toLocaleString()}`;
 }
@@ -56,26 +45,15 @@ client.once('ready', () => {
   console.log(`✅ Prihlásený ako ${client.user.tag}`);
 });
 
-// 💥 ONLY ONE MESSAGE HANDLER (FIX DUPLICATE BUG)
+// 💬 MESSAGE HANDLER
 client.on('messageCreate', (message) => {
 
   if (message.author.bot) return;
 
-  const args = message.content.split(" ");
+  const msg = message.content.trim();
+  const args = msg.split(" ");
 
-  console.log("📩:", message.content);
-
-  // 🔄 RESET STATS
-  if (stats.day !== new Date().getDate()) {
-    stats = {
-      deposits: 0,
-      withdrawals: 0,
-      transactions: 0,
-      day: new Date().getDate()
-    };
-  }
-
-  // 🧑 SET NAME
+  // 🧑 SETNAME
   if (args[0] === "!setname") {
     const name = args.slice(1).join(" ");
     if (!name) return message.reply("Použi !setname Meno Priezvisko");
@@ -87,7 +65,7 @@ client.on('messageCreate', (message) => {
   }
 
   // 💰 STAV
-  if (message.content === "!stav") {
+  if (msg === "!stav") {
     const embed = new EmbedBuilder()
       .setTitle("💰 RP BANKA")
       .addFields(
@@ -107,20 +85,15 @@ client.on('messageCreate', (message) => {
       return message.reply("Použi !banka +10000 alebo -5000 (popis)");
     }
 
-    const match = message.content.match(/\(([^)]+)\)/);
+    const match = msg.match(/\(([^)]+)\)/);
     const description = match ? match[1] : "Bez popisu";
 
     banka.balance += amount;
     saveBank();
 
-    stats.transactions++;
-    if (amount > 0) stats.deposits += amount;
-    else stats.withdrawals += Math.abs(amount);
-
     const embed = new EmbedBuilder()
       .setTitle("🏦 TRANSAKCIA")
       .addFields(
-        { name: "Typ", value: amount > 0 ? "➕ Vklad" : "➖ Výplata", inline: true },
         { name: "Suma", value: money(amount), inline: true },
         { name: "Popis", value: description, inline: false },
         { name: "IC", value: getICName(message.author), inline: false },
@@ -131,41 +104,23 @@ client.on('messageCreate', (message) => {
     return message.channel.send({ embeds: [embed] });
   }
 
-  // 📈 DENNÝ REPORT
-  if (message.content === "!dennyreport") {
+  // 📄 OMLUVENKA
+  if (msg.startsWith("!omluvenka")) {
+
+    const odDo = args.slice(1).join(" ") || "dopln";
 
     const embed = new EmbedBuilder()
-      .setTitle("📈 DENNÝ REPORT")
+      .setTitle("📄 OMLUVENKA")
       .addFields(
-        { name: "💰 Stav", value: money(banka.balance), inline: false },
-        { name: "📊 Príjmy", value: money(stats.deposits), inline: true },
-        { name: "📉 Výdavky", value: money(stats.withdrawals), inline: true },
-        { name: "🧾 Transakcie", value: `${stats.transactions}`, inline: false }
+        { name: "📅 Od - Do", value: odDo, inline: false },
+        { name: "🎭 IC dôvod", value: "dopln", inline: false },
+        { name: "💬 OOC dôvod", value: "dopln", inline: false }
       )
-      .setColor("Blue");
+      .setColor("Orange")
+      .setFooter({ text: getICName(message.author) });
 
     return message.channel.send({ embeds: [embed] });
   }
-
-  // 📄 OMLUVENKA
-if (message.content.startsWith("!omluvenka")) {
-
-  const args = message.content.split(" ");
-
-  const odDo = args.slice(1).join(" ") || "dopln";
-
-  const embed = new EmbedBuilder()
-    .setTitle("📄 OMLUVENKA")
-    .addFields(
-      { name: "📅 Od - Do", value: odDo, inline: false },
-      { name: "🎭 IC dôvod", value: "dopln", inline: false },
-      { name: "💬 OOC dôvod", value: "dopln", inline: false }
-    )
-    .setColor("Orange")
-    .setFooter({ text: getICName(message.author) });
-
-  return message.channel.send({ embeds: [embed] });
-}
 
 });
 
