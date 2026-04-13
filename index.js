@@ -15,7 +15,7 @@ if (fs.existsSync('banka.json')) {
   banka = JSON.parse(fs.readFileSync('banka.json'));
 }
 
-// 🧑 IC MENÁ
+// 🧑 MENÁ
 let names = {};
 if (fs.existsSync('names.json')) {
   names = JSON.parse(fs.readFileSync('names.json'));
@@ -45,7 +45,7 @@ client.once('ready', () => {
   console.log(`✅ Prihlásený ako ${client.user.tag}`);
 });
 
-// 💬 MESSAGE HANDLER
+// 💬 MESSAGE HANDLER (JEDINÝ!)
 client.on('messageCreate', (message) => {
 
   if (message.author.bot) return;
@@ -124,4 +124,5 @@ client.on('messageCreate', (message) => {
 
 });
 
+// 🔐 TOKEN z Railway (NEUKLADAT DO KÓDU!)
 client.login(process.env.TOKEN);
