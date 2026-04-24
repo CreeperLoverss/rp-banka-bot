@@ -9,10 +9,16 @@ const client = new Client({
   ]
 });
 
-// 💰 BANKA
-let banka = { balance: 500000 };
+// 💰 BANKA (default)
+let banka = { balance: 456636 };
 if (fs.existsSync('banka.json')) {
   banka = JSON.parse(fs.readFileSync('banka.json'));
+}
+
+// 🔧 FIXY (default)
+let fixy = { kusy: 155 };
+if (fs.existsSync('fixy.json')) {
+  fixy = JSON.parse(fs.readFileSync('fixy.json'));
 }
 
 // 🧑 MENÁ
@@ -24,6 +30,10 @@ if (fs.existsSync('names.json')) {
 // 💾 SAVE
 function saveBank() {
   fs.writeFileSync('banka.json', JSON.stringify(banka, null, 2));
+}
+
+function saveFixy() {
+  fs.writeFileSync('fixy.json', JSON.stringify(fixy, null, 2));
 }
 
 function saveNames() {
@@ -45,7 +55,7 @@ client.once('ready', () => {
   console.log(`✅ Prihlásený ako ${client.user.tag}`);
 });
 
-// 💬 MESSAGE HANDLER (JEDINÝ!)
+// 💬 MESSAGE HANDLER
 client.on('messageCreate', (message) => {
 
   if (message.author.bot) return;
@@ -64,7 +74,7 @@ client.on('messageCreate', (message) => {
     return message.reply(`🧑 IC meno: **${name}**`);
   }
 
-  // 💰 STAV
+  // 💰 STAV BANKY
   if (msg === "!stav") {
     const embed = new EmbedBuilder()
       .setTitle("💰 RP BANKA")
@@ -104,25 +114,49 @@ client.on('messageCreate', (message) => {
     return message.channel.send({ embeds: [embed] });
   }
 
-  // 📄 OMLUVENKA
-  if (msg.startsWith("!omluvenka")) {
+  // 🔧 FIXY (SKLAD)
+  if (args[0] === "!fixy") {
 
-    const odDo = args.slice(1).join(" ") || "dopln";
+    const amount = parseInt(args[1]);
+
+    if (isNaN(amount)) {
+      return message.reply("Použi !fixy +20 (popis)");
+    }
+
+    const match = msg.match(/\(([^)]+)\)/);
+    const description = match ? match[1] : "Bez popisu";
+
+    fixy.kusy += amount;
+    saveFixy();
+
+    const typ = amount > 0 ? "📥 Naskladnené" : "📤 Vydané";
 
     const embed = new EmbedBuilder()
-      .setTitle("📄 OMLUVENKA")
+      .setTitle("🔧 FIXBOX SKLAD")
       .addFields(
-        { name: "📅 Od - Do", value: odDo, inline: false },
-        { name: "🎭 IC dôvod", value: "dopln", inline: false },
-        { name: "💬 OOC dôvod", value: "dopln", inline: false }
+        { name: "Typ", value: typ, inline: true },
+        { name: "Počet", value: `${amount} ks`, inline: true },
+        { name: "IC meno", value: getICName(message.author), inline: true },
+        { name: "Popis", value: description, inline: false },
+        { name: "Aktuálny stav", value: `${fixy.kusy} ks`, inline: false }
       )
-      .setColor("Orange")
-      .setFooter({ text: getICName(message.author) });
+      .setColor(amount > 0 ? "Green" : "Red");
+
+    return message.channel.send({ embeds: [embed] });
+  }
+
+  // 🔧 STAV FIXOV
+  if (msg === "!stavfixy") {
+
+    const embed = new EmbedBuilder()
+      .setTitle("🔧 STAV FIXBOX SKLADU")
+      .setDescription(`📦 Aktuálny stav: **${fixy.kusy} ks**`)
+      .setColor("Blue");
 
     return message.channel.send({ embeds: [embed] });
   }
 
 });
 
-// 🔐 TOKEN z Railway (NEUKLADAT DO KÓDU!)
+// 🔐 TOKEN (Railway)
 client.login(process.env.TOKEN);
